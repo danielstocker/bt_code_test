@@ -72,6 +72,11 @@ public class OrganisationSearch {
 			secondEmployee = this.offerEmployeeChoice(secondEmployeeName, resultsForSecond);
 		}
 		
+		if(firstEmployee.getEmployeeNumber() == secondEmployee.getEmployeeNumber()) {
+			System.out.println("Both records point to the same person: " + firstEmployee.getEmployeeName() + " (" + firstEmployee.getEmployeeNumber() + ")");
+			return;
+		} 
+		
 		String path = this.findStringPath(firstEmployee, secondEmployee, "", new ArrayList<Integer>());
 		
 		if(path != null) {
@@ -84,25 +89,17 @@ public class OrganisationSearch {
 	private String findStringPath(Employee currentNode, Employee goal, String currentPath, ArrayList<Integer> visited) {
 		visited.add(currentNode.getEmployeeNumber());
 		currentPath = currentPath + currentNode.getEmployeeName() + " (" + currentNode.getEmployeeNumber() + ") ";
-		
-		// is the goal near this node?
-		// is it the manager?
-		// or are we currently at the big boss?
-		if(currentNode.getManagerNumber() != 0) {
-			if(currentNode.getManager().getEmployeeNumber() == goal.getEmployeeNumber()) {
-				currentPath = currentPath + "-> " + goal.getEmployeeName() + " (" + goal.getEmployeeNumber() + ") ";
-				return currentPath;
-			}
-		}
-		
-		// is it one of the direct reports
+
+		// is the goal one of the direct reports?
 		ArrayList<Employee> currentReports = currentNode.getReports();
 		if(currentReports != null) {
 			for (Employee currentReport : currentReports) {
 				if(currentReport.getEmployeeNumber() == goal.getEmployeeNumber()) {
+					// if match return path
 					currentPath = currentPath + "<- " + goal.getEmployeeName() + " (" + goal.getEmployeeNumber() + ") ";
 					return currentPath;
 				} else {
+					// if no match continue to explore direct reports
 					if(!visited.contains(currentReport.getEmployeeNumber())) {
 						String tryFind = findStringPath(currentReport, goal, currentPath + "<- ", visited);
 						if(tryFind != null) {
@@ -115,17 +112,23 @@ public class OrganisationSearch {
 			}
 		}
 		
-		
-		// continue search to reports if there are any
-		if(currentReports != null) {		
-			
+		// is the goal near this node?
+		// is it the manager? have we visited them yet?
+		// or are we currently at the big boss?
+		if(currentNode.getManagerNumber() != 0) {
+			if(currentNode.getManager().getEmployeeNumber() == goal.getEmployeeNumber()) {
+				currentPath = currentPath + "-> " + goal.getEmployeeName() + " (" + goal.getEmployeeNumber() + ") ";
+				return currentPath;
+			} else {
+				if(visited.contains(currentNode.getManager().getEmployeeNumber())) {
+					return null;
+				} else {
+					return findStringPath(currentNode.getManager(), goal, currentPath + "-> ", visited);
+				}
+			}
 		}
 		
-		if(visited.contains(currentNode.getManager().getEmployeeNumber())) {
-			return null;
-		} else {
-			return findStringPath(currentNode.getManager(), goal, currentPath + "-> ", visited);
-		}
+		return null;
 	}
 
 	private Employee offerEmployeeChoice(String name, ArrayList<Employee> results) {
